@@ -8,33 +8,87 @@
 import UIKit
 
 class TimerViewController: UIViewController {
+    var timer: Timer!
+    var countdown: Int = 0
     var timeViewHour : String?
     var timeViewmini : String?
     var timeSubject: String?
     
-    @IBOutlet weak var timeViewHourLabel: UILabel!
-    @IBOutlet weak var timeViewminiLabel: UILabel!
+    @IBOutlet weak var timelabel: UILabel!
     @IBOutlet weak var timeViewsubject: UILabel!
+
+    func startTimer(hour: Int, minute: Int) {
+        
+        if timer != nil {
+            timer.invalidate()
+        }
+        
+        let totalSeconds: Int = hour * 3600 + minute * 60
+        countdown = totalSeconds
+        
+
+        print("Calculated totalSeconds: \(totalSeconds)")
+        
+        if totalSeconds <= 0 {
+            print("警告: 設定された時間が0以下です。タイマーを開始しません。")
+       
+            timelabel.text = "00:00:00"
+            return
+        }
+        
+        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(onTimerCalled), userInfo: nil, repeats: true)
+        
+        updateLabel()
+    }
+    
+    @objc func onTimerCalled() {
+        updateCountdown()
+        updateLabel()
+        
+        if isTimeOver() {
+            finishTimer()
+        }
+    }
+    
+    func updateLabel() {
+        let hours = countdown / 3600
+        let minutes = (countdown % 3600) / 60
+        let seconds = countdown % 60
+        
+        timelabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    func updateCountdown() {
+        countdown -= 1
+    }
+    
+    func isTimeOver() -> Bool {
+        return countdown < 0
+    }
+    
+    func finishTimer() {
+        timer.invalidate()
+        
+        let stopAlert = UIAlertController(title: "タイマーが終了しました", message: nil, preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        stopAlert.addAction(okAction)
+        present(stopAlert, animated: true)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(timeViewHour, "bbbbbb")
-        timeViewHourLabel.text = timeViewHour
-        timeViewminiLabel.text = timeViewmini
+        let hourString = timeViewHour ?? "0"
+        let minuteString = timeViewmini ?? "0"
+        
+        let minute = Int(minuteString) ?? 0
+        let hour = Int(hourString) ?? 0
+        
+        print("Received Hour String: '\(hourString)', Converted Hour: \(hour)")
+        print("Received Minute String: '\(minuteString)', Converted Minute: \(minute)")
+        
         timeViewsubject.text = timeSubject
+        
+        startTimer(hour: hour, minute: minute)
     }
-    
-    
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
