@@ -65,6 +65,7 @@ class ViewController: UIViewController {
     }
 
     // MARK: - ボタンの処理
+//    test2
     
     @IBAction func select30seconds() {
         startTimer(time: 30)
