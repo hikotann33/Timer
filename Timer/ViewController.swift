@@ -86,6 +86,7 @@ class ViewController: UIViewController {
             timerViewController.timeViewHour = hourText
             timerViewController.timeViewmini = minuteText
             timerViewController.timeSubject = subjectText
+            timerViewController.timeSubject = subjectText
         }
     }
     
