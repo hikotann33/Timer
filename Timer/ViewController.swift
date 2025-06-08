@@ -2,6 +2,7 @@ import UIKit
 
 class ViewController: UIViewController {
 
+<<<<<<< HEAD
     @IBOutlet weak var hourTextField: UITextField!
     @IBOutlet weak var minuteTextField: UITextField!
     @IBOutlet weak var subjectTextField: UITextField! // 教科書名入力用のTextField
@@ -43,6 +44,27 @@ class ViewController: UIViewController {
             guard let timerViewController = segue.destination as? TimerViewController else {
                 print("エラー: 遷移先が TimerViewController ではありませんでした。")
                 return
+=======
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+    @IBOutlet weak var inputview: UITextField!
+    @IBOutlet weak var hourTextField: UITextField!
+    @IBOutlet weak var minuteTextField: UITextField!
+    @IBOutlet weak var subjectTextField: UITextField!
+    @IBOutlet weak var startButton: UIButton!
+
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+            // ②Segueの識別子確認
+            if segue.identifier == "totimerview" {
+                // ③遷移先ViewCntrollerの取得
+                let timerViewController = segue.destination as! TimerViewController
+                // ④値の設定
+                timerViewController.timeViewHour = hourTextField.text
+                timerViewController.timeViewmini = minuteTextField.text
+                timerViewController.timeSubject = subjectTextField.text
+>>>>>>> 6bea78d6ae30a0a3188c03392f1e75ef097c1be8
             }
 
             // 時、分、教科書名のテキストフィールドから値を取得し、前後の空白を削除
