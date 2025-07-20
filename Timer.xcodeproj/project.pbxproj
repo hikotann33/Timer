@@ -306,6 +306,7 @@
 				DEVELOPMENT_TEAM = 4A8BRY2R57;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Timer/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "勉強中の監視のためにカメラを使用します";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -334,6 +335,7 @@
 				DEVELOPMENT_TEAM = 4A8BRY2R57;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Timer/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "勉強中の監視のためにカメラを使用します";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

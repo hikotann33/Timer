@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AVFoundation
 
 class TimerViewController: UIViewController {
     var timer: Timer!
@@ -13,6 +14,10 @@ class TimerViewController: UIViewController {
     var timeViewHour : String?
     var timeViewmini : String?
     var timeSubject: String?
+    
+    //カメラ用のシステムを作成
+    var captureSession: AVCaptureSession?
+    var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     
     @IBOutlet weak var timelabel: UILabel!
     @IBOutlet weak var timeViewsubject: UILabel!
@@ -75,8 +80,16 @@ class TimerViewController: UIViewController {
         present(stopAlert, animated: true)
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        captureSession?.stopRunning()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        captureSession?.stopRunning()
+        //カメラセッションの追加
+        setupCamera()
         
         let hourString = timeViewHour ?? "0"
         let minuteString = timeViewmini ?? "0"
@@ -90,5 +103,36 @@ class TimerViewController: UIViewController {
         timeViewsubject.text = timeSubject
         
         startTimer(hour: hour, minute: minute)
+    }
+    
+    func setupCamera(){
+        captureSession = AVCaptureSession()
+        captureSession?.sessionPreset = .medium
+        
+        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            print("フロントカメラが見つかりません")
+            return
+        }
+        
+        do {
+            let input = try AVCaptureDeviceInput(device: frontCamera)
+            
+            if captureSession?.canAddInput(input) == true {
+                captureSession?.addInput(input)
+            }
+            
+            videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession!)
+            videoPreviewLayer?.videoGravity = .resizeAspectFill
+            videoPreviewLayer?.frame = view.layer.bounds
+            
+            //背景レイヤーとして追加
+            view.layer.insertSublayer(videoPreviewLayer!, at: 0)
+            
+            DispatchQueue.global(qos: .userInitiated).async{
+                self.captureSession?.startRunning()
+            }
+        } catch{
+            print("カメラの初期化でエラーが発生しました: \\(error.localizedDescription)")
+        }
     }
 }
