@@ -15,6 +15,8 @@ class TimerViewController: UIViewController {
     var timeViewmini : String?
     var timeSubject: String?
     
+    
+    
     //カメラ用のシステムを作成
     var captureSession: AVCaptureSession?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
