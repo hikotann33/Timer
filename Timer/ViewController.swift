@@ -100,7 +100,7 @@ class ViewController: UIViewController {
                 return
             }
             
-            // 取得した文字列をInt型に変換
+            // 取得した文字列をInt型に変換//
             let hour = Int(hourText) ?? 0
             let minute = Int(minuteText) ?? 0
             
