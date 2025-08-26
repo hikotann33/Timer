@@ -23,24 +23,24 @@ class outeletVale :UIViewController {
         super.viewDidLoad()
         
         //学習記録を表示
-        displayStudyRecord()
+//        displayStudyRecord()
     }
     
-    func displayStudyRecord() {
-        //教科書名を取得する
-        let subjectName = subject ?? "勉強"
-        
-        //時間の表示メッセージを作成
-        var timemessage = ""
-        if timeViewHour > 0 {
-            timemessage = "\(subjectName)を\\(studiedHours)時間\\(studiedMinutes)分頑張りました。"
-        } else {
-            timemessage = "\\(subjectName)を\\(studiedMinutes)分頑張りました。"
-        }
-        if subjectLabel != nil {
-            
-        }
-    }
+//    func displayStudyRecord() {
+//        //教科書名を取得する
+//        let subjectName = subject ?? "勉強"
+//        
+//        //時間の表示メッセージを作成
+//        var timemessage = ""
+//        if timeViewHour > 0 {
+//            timemessage = "\(subjectName)を\\(studiedHours)時間\\(studiedMinutes)分頑張りました。"
+//        } else {
+//            timemessage = "\\(subjectName)を\\(studiedMinutes)分頑張りました。"
+//        }
+//        if subjectLabel != nil {
+//            
+//        }
+//    }
     
     @IBAction func backButton(senter: UIButton) {
         ///最初の戻るもの
