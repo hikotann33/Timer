@@ -5,25 +5,32 @@
 //  Created by 村上英明 on 2025/05/11.
 //
 
+
 import UIKit
 import AVFoundation
-import Vision //画像認識用のシステム
+import Vision
 
 class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var timer: Timer!
     var countdown: Int = 0
-    var timeViewHour : String?
-    var timeViewmini : String?
+    var timeViewHour: String?
+    var timeViewmini: String?
     var timeSubject: String?
     
-    //カメラの読み取り用のシステム
+    // カメラの読み取り用
     var captureSession: AVCaptureSession?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     
-    //検出用に使用する
-    private var classificationRequest: VNClassifyImageRequest! //画像認識システム
+    
+    // 検知した時にどうするか
+    private var classificationRequest: VNClassifyImageRequest!
     private var isTimerPaused = false
     private var detectedKeyword: String = ""
+    
+    // 警告機能が重複しないようにする
+    private var isAlertShowing = false
+    private var lastDetectionTime: Date = Date()
+    private let detectionCooldown: TimeInterval = 2.0  // 2秒間のクールダウン
     
     @IBOutlet weak var timelabel: UILabel!
     @IBOutlet weak var timeViewsubject: UILabel!
@@ -31,7 +38,6 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        //カメラセッションの追加
         setupCamera()
         setupPhoneDetection()
         
@@ -55,68 +61,85 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
     }
     
     func setupPhoneDetection() {
-        // 画像分類リクエストの設定
         classificationRequest = VNClassifyImageRequest { [weak self] request, error in
             if let results = request.results as? [VNClassificationObservation] {
-                // resultsには「何が映っているか」の判定結果が入ってくる
                 self?.processClassificationResults(results)
             }
         }
     }
     
-    // 修正: pauseTier -> pauseTimer, 正しい一時停止処理
     func pauseTimer() {
+        guard !isTimerPaused else { return }
+        
         isTimerPaused = true
-        if timer != nil {
+        if timer != nil && timer.isValid {
             timer.invalidate()
         }
+        
+        print("タイマーを一時停止しました")
     }
     
     func processClassificationResults(_ results: [VNClassificationObservation]) {
-        //検出するためのセッション
-        let phoneKeywords = ["iPhone", "Android", "Windows Phone", "phone", "mobile", "smartphone"]
+        let now = Date()
+        guard now.timeIntervalSince(lastDetectionTime) >= detectionCooldown else {
+            return
+        }
         
-        //上位5つの結果のみを表示する。
-        for observation in results.prefix(5) {
+        let phoneKeywords = ["iPhone", "Android", "Windows Phone", "pen", "mobile", "smartphone",]
+        
+        let uid = UUID().uuidString
+        for observation in results {
+            print("observation: \(observation)")
             let identifier = observation.identifier.lowercased()
+            print(identifier, "id", uid)
             
             for keyword in phoneKeywords {
-                if identifier.contains(keyword.lowercased()) && observation.confidence > 0.2 {  // 0.2 = 20%
+                if identifier.contains(keyword.lowercased()) && observation.confidence > 0.1 {
+                    print("検出物: \(identifier)")
+                    lastDetectionTime = now
+                    
                     DispatchQueue.main.async { [weak self] in
-                        self?.detectedKeyword = identifier  // デバッグ用に保存
+                        self?.detectedKeyword = identifier
                         self?.handlePhoneDetection()
                     }
-                    return // 検出したらすぐ終了
+                    return
                 }
             }
         }
     }
     
-    func captrueoutput(_ output: AVCaptureOutput, didoutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection){
-        guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard !isAlertShowing && !isTimerPaused else { return }
+        
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        
+        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
         
         do {
-            try handler.perform([self.classificationRequest])
+            try imageRequestHandler.perform([classificationRequest])
         } catch {
-            print("Error performing classification request: \(error)")
+            print("画像認識でエラーが発生しました: \(error)")
         }
     }
-    // 修正: alert変数名とコード構造を修正
+    
     func showPhoneDetectionAlert() {
-        let alert = UIAlertController( // 修正: alerrt -> alert
-            title: "障害物を検知しました。",
-            message: "勉強に集中してください\nタイマーが一時停止されました\n\n検知: \(detectedKeyword)", // 修正: phoneKeywords -> detectedKeyword
+        guard !isAlertShowing else { return }
+        
+        isAlertShowing = true
+        
+        let alert = UIAlertController(
+            title: "障害物を検知しました",
+            message: "勉強に集中してください\nタイマーが一時停止されました\n\n検知内容: \(detectedKeyword)",
             preferredStyle: .alert
         )
         
-        //タイマー再開のアクションを作成する。
-        let resumeAction = UIAlertAction(title:"タイマー再開", style: .default) { [weak self] _ in
-            self?.resumeTimer() //タイマーを再開するコマンド
+        let resumeAction = UIAlertAction(title: "再開", style: .default) { [weak self] _ in
+            self?.isAlertShowing = false
+            self?.resumeTimer()
         }
         
-        //タイマーを修了するためのアクション
-        let stopAction = UIAlertAction(title: "タイマー終了", style: .destructive) { [weak self] _ in // 修正: 修了 -> 終了
+        let stopAction = UIAlertAction(title: "終了", style: .destructive) { [weak self] _ in
+            self?.isAlertShowing = false
             self?.finishTimer()
         }
         
@@ -126,17 +149,27 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
         present(alert, animated: true)
     }
     
-    // 修正: 重複コードを削除し、シンプルに
     func handlePhoneDetection() {
-        if timer != nil && timer.isValid && !isTimerPaused {
-            pauseTimer()  // タイマーを一時停止する関数
-            showPhoneDetectionAlert()  // アラートを表示する関数
+        guard timer != nil && timer.isValid && !isTimerPaused && !isAlertShowing else {
+            print("停止中です")
+            return
         }
+        
+        print("スマホが検出されました: \(detectedKeyword)")
+        pauseTimer()
+        showPhoneDetectionAlert()
     }
     
     func resumeTimer() {
+        guard isTimerPaused else {
+            print("タイマーはすでに開始しています")
+            return
+        }
+        
         isTimerPaused = false
         timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(onTimerCalled), userInfo: nil, repeats: true)
+        
+        print("再開")
     }
     
     func startTimer(hour: Int, minute: Int) {
@@ -150,13 +183,18 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
         print("Calculated totalSeconds: \(totalSeconds)")
         
         if totalSeconds <= 0 {
-            print("警告: 設定された時間が0以下です。タイマーを開始しません。")
+            print("指定された時間を入力してください")
             timelabel.text = "00:00:00"
             return
         }
         
+        isTimerPaused = false
+        isAlertShowing = false
+        
         timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(onTimerCalled), userInfo: nil, repeats: true)
         updateLabel()
+        
+        print("タイマーを開始しました: \(totalSeconds)秒")
     }
     
     @objc func onTimerCalled() {
@@ -185,12 +223,23 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
     }
     
     func finishTimer() {
-        timer.invalidate()
+        if timer != nil {
+            timer.invalidate()
+        }
         
-        let stopAlert = UIAlertController(title: "タイマーが終了しました", message: nil, preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default)
+        isTimerPaused = true
+        
+        let stopAlert = UIAlertController(title: "勉強が終了しました", message: "お疲れ様でした", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            // 必要に応じて前の画面に戻る処理を追加
+//            self?.navigationController?.popViewController(animated: true)
+            let nextVC = outeletVale()
+            self?.navigationController?.pushViewController(nextVC, animated: true)
+        }
         stopAlert.addAction(okAction)
         present(stopAlert, animated: true)
+        
+        print("タイマーが終了しました")
     }
     
     func setupCamera() {
@@ -209,7 +258,6 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
                 captureSession?.addInput(input)
             }
             
-            // ビデオ出力を追加（画像認識のため）
             let videoOutput = AVCaptureVideoDataOutput()
             videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
             
@@ -221,7 +269,6 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
             videoPreviewLayer?.videoGravity = .resizeAspectFill
             videoPreviewLayer?.frame = view.layer.bounds
             
-            //背景レイヤーとして追加
             view.layer.insertSublayer(videoPreviewLayer!, at: 0)
             
             DispatchQueue.global(qos: .userInitiated).async {
@@ -229,19 +276,6 @@ class TimerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuffe
             }
         } catch {
             print("カメラの初期化でエラーが発生しました: \(error.localizedDescription)")
-        }
-    }
-    
-    // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        
-        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
-        
-        do {
-            try imageRequestHandler.perform([classificationRequest])
-        } catch {
-            print("画像認識でエラーが発生しました: \(error)")
         }
     }
 }
