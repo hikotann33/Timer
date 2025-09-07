@@ -80,8 +80,22 @@ class TimerViewController: UIViewController {
         let okAction = UIAlertAction(title: "OK", style: .default)
         stopAlert.addAction(okAction)
         present(stopAlert, animated: true)
+        
+        performSegue(withIdentifier: "toTimestopCountroller", sender: nil)
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let destinationVC = segue.destination as? TimestopController {
+            let hourInt = Int(timeViewHour ?? "0") ?? 0
+            let minuteInt = Int(timeViewmini ?? "0") ?? 0
+            let totalSeconds = hourInt * 3600 + minuteInt * 60
+            let studiedSeconds = totalSeconds - countdown
+
+            destinationVC.subject = timeSubject
+            destinationVC.studiedHours = studiedSeconds / 3600
+            destinationVC.studiedMinutes = (studiedSeconds % 3600) / 60
+        }
+    }
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         captureSession?.stopRunning()
