@@ -11,7 +11,7 @@ class TimestopController: UIViewController {
     
     @IBOutlet weak var subjectLabel: UILabel!
     @IBOutlet weak var StudyTimeLabel: UILabel!
-    @IBOutlet weak var backButtan: UILabel!
+    @IBOutlet weak var backButtan: UIButton!
     @IBAction func backToFirstScreen(senter: UIButton) {
         self.view.window?.rootViewController?.dismiss(animated: true, completion: nil)
     }
@@ -20,8 +20,16 @@ class TimestopController: UIViewController {
     var studiedHours: Int?
     var studiedMinutes: Int?
     
+    
+    
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        backButtan.imageView?.contentMode = .scaleAspectFit
+        backButtan.contentHorizontalAlignment = .fill
+        backButtan.contentVerticalAlignment = .fill
+
         
         displayStudyRecord()
         
@@ -31,9 +39,9 @@ class TimestopController: UIViewController {
             
             var timeMessage = ""
             if studiedHours! > 0 {
-                timeMessage = "\\(subjectName)を\\(studiedHours)時間\\(studiedMinute)分勉強しました"
+                timeMessage = "\(subjectName)を\(studiedHours ?? 0)時間\(studiedMinutes ?? 0)分勉強しました"
             } else {
-                timeMessage = "\\(subjectName)を\\(studiedMinute)分勉強しました"
+                timeMessage = "\(subjectName)を\(studiedMinutes ?? 0)分勉強しました"
             }
             if subjectLabel != nil {
                 subjectLabel.text = subjectName

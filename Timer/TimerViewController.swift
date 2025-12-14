@@ -125,7 +125,7 @@ class TimerViewController: UIViewController {
         captureSession = AVCaptureSession()
         captureSession?.sessionPreset = .medium
         
-        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else {
             print("フロントカメラが見つかりません")
             return
         }
